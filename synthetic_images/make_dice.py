@@ -155,7 +155,7 @@ if __name__ == "__main__":
                   make_nbg_grays,
                   make_noisy,
                   make_gray_noisy,
-                  #make_images,
+                  make_images,
                   make_shift_noisy]
 
     image_count = 30
