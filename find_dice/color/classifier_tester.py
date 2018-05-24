@@ -7,7 +7,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import time
 import random
-from common_net import Net
+from net_50 import Net as Net_50
+from net_100 import Net as Net_100
 
 
 verbose = True
@@ -16,7 +17,7 @@ classes = ('1','2','3','4','5','6')
 dims = 50
 
 data_start = time.time()
-testset = DiceDataset("data/testing_bg", train=False, classes=len(classes), class_max=2000, train_percent=0, dims=dims)
+testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=2000, train_percent=0, dims=dims)
 data_end = time.time()
 
 model_start = time.time()

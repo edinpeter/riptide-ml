@@ -6,7 +6,6 @@ mkdir gray_nbg
 mkdir gray_noise
 mkdir color_shift
 mkdir color_shift_noise
-mkdir backgrounds
 mkdir samples
 mkdir dice_snaps
 

@@ -1,0 +1,10 @@
+rm -rf color
+rm -rf color_nbg
+rm -rf color_noise
+rm -rf gray
+rm -rf gray_nbg
+rm -rf gray_noise
+rm -rf color_shift
+rm -rf color_shift_noise
+rm -rf samples
+rm -rf dice_snaps

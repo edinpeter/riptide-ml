@@ -9,7 +9,9 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from common_net import Net
+from net_50 import Net as Net_50
+from net_100 import Net as Net_100
+
 
 classes = ('1','2','3','4','5','6')
 
@@ -28,7 +30,8 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
 testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                          shuffle=True, num_workers=8)
 
-net = Net(dims, classes).cuda()
+net = Net_50().cuda()
+print net
 
 
 criterion = nn.CrossEntropyLoss()
@@ -37,17 +40,14 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.ASGD(net.parameters(), lr=0.0011)
 #m = nn.LogSoftmax()
 
-for epoch in range(150):
+for epoch in range(100):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels, filenames = data
         inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
         
-        #print inputs
-
         optimizer.zero_grad()
         outputs = net(inputs)
-        #print outputs
         loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()

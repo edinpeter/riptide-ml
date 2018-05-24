@@ -1,5 +1,5 @@
 import cv2
-from make_dice import alpha_image, add_alpha
+from make_dice import alpha_image, add_alpha, random_blur, brightness
 import numpy as np
 import os
 import random
@@ -44,8 +44,9 @@ def add_dice(bg_img, die_img, die_number):
 
 	comp = cv2.bitwise_or(bg_comp, alpha_comp)
 
-	die_with_bg = comp[die_center_y - half_size : die_center_y + half_size, die_center_x -  half_size : die_center_x +  half_size] 
-	
+	die_with_bg = comp[die_center_y - half_size : die_center_y + half_size, die_center_x -  half_size : die_center_x +  half_size]
+	print die_with_bg.shape
+
 	cv2.imwrite(os.path.join(dice_snap_dir, die_number + '_' + str(die_snap_count) + '.png'), die_with_bg)
 	die_snap_count += 1
 	return comp
@@ -64,6 +65,7 @@ if __name__ == '__main__':
 		bg = bg_imgs[q]
 		for i in range(0, random.randint(1, 4)):
 			die, number = random_die()
+			die = random_blur(die)
 			bg = add_dice(bg, die, number)
 		cv2.imwrite(os.path.join(dest, str(q) + '.png'), bg)
 

@@ -6,6 +6,10 @@ from multiprocessing import Process
 import random
 
 multi = True
+def random_blur(image):
+    blur_amt = random.randint(0,10)
+    blur_amt = blur_amt if blur_amt % 2 == 1 else blur_amt + 1
+    return cv2.blur(image, (blur_amt, blur_amt))
 
 def alpha_image(dims, dtype):
     alpha_c = np.ones(dims, dtype=dtype) * 255
@@ -39,6 +43,19 @@ def shift_image(image):
     else:
         image[0 : im_shape[0] - 1, 0 : horizontal_shift] = alpha
     return image
+
+def brightness(image):
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv_image)
+    brighten_amount = random.randint(-100, 100)
+    if brighten_amount > 0:
+        v = np.where(v >= 255 - brighten_amount, 255, v + brighten_amount)
+    else:
+        v = np.where(v <= 0 - brighten_amount, 0, v + brighten_amount)
+    v = v.astype(h.dtype)
+    hsv_image = cv2.merge((h, s, v))
+
+    return cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
 
 def strip_red_background(image):
     channels = cv2.split(image)
@@ -131,7 +148,9 @@ def make_shift_noisy(class_num, doall=True):
         if doall or str(class_num) + '_' in image:
             img = cv2.imread(os.path.join(color_nbg_shift_dir, image), cv2.IMREAD_UNCHANGED)
             img = add_noise(img)
-            img = cv2.blur(img, (5,5))
+            img = brightness(img)
+
+            img = random_blur(img)
             cv2.imwrite(os.path.join(color_shift_noise_dir, image), img)
 
 def make_threads(function):
@@ -150,12 +169,12 @@ def make_images(i, image_count):
 
 if __name__ == "__main__":
     operations = [make_grayscale,
-                  make_shifted,
                   remove_background,
+                  make_shifted,
                   make_nbg_grays,
                   make_noisy,
                   make_gray_noisy,
-                  make_images,
+                  #make_images,
                   make_shift_noisy]
 
     image_count = 30
