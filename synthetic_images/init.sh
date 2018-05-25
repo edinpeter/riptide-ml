@@ -8,6 +8,8 @@ mkdir color_shift
 mkdir color_shift_noise
 mkdir samples
 mkdir dice_snaps
+mkdir color_shift_noise
+mkdir color_small
 
 python make_dice.py 1000
 python make_samples.py

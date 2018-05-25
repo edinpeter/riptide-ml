@@ -22,6 +22,25 @@ def add_alpha(image):
     alpha = np.ones(b.shape, dtype=b.dtype) * 255
     return cv2.merge((b, g, r, alpha))
 
+def zoom_out(image):
+    old_size = image.shape
+    pad_width = random.randint(3, old_size[0] / 4)
+    #pad_width = ((pad_width, pad_width), (pad_width, pad_width), (0,0))
+    alpha = (255,255,255,0)
+    #image = np.pad(image, pad_width, 'constant', constant_values=0)
+    d = cv2.split(image)
+    for i in range(3):
+        d[i] = np.pad(d[i], (pad_width, pad_width), 'constant', constant_values=255)
+    d[3] = np.pad(d[3], (pad_width, pad_width), 'constant', constant_values=0)
+    image = cv2.merge(d)
+
+    #darks = cv2.inRange(image, (0,0,0,0), (0,0,0,0))
+    #a_i = alpha_image(image.shape[0:2], image.dtype)
+    #image[darks] = a_i
+
+    return cv2.resize(image, (old_size[0:2]))
+
+
 def shift_image(image):
     alpha = (255, 255, 255, 0)
     im_shape = image.shape
@@ -116,7 +135,7 @@ def make_nbg_grays(class_num, doall=True):
             cv2.imwrite(os.path.join(gray_nbg_dir, image), img)
 
 def make_noisy(class_num, doall=True):
-    color_nbg_dir = 'color_nbg'
+    color_nbg_dir = 'color_small'
     color_noise_dir = 'color_noise'
     for image in os.listdir(color_nbg_dir):
         if doall or str(class_num) + '_' in image:
@@ -133,7 +152,7 @@ def make_gray_noisy(class_num, doall=True):
             cv2.imwrite(os.path.join(gray_noise_dir, image), img)
 
 def make_shifted(class_num, doall=True):
-    color_nbg_dir = 'color_nbg'
+    color_nbg_dir = 'color_small'
     color_nbg_shift_dir = 'color_shift'
     for image in os.listdir(color_nbg_dir):
         if doall or str(class_num) + '_' in image:
@@ -153,9 +172,20 @@ def make_shift_noisy(class_num, doall=True):
             img = random_blur(img)
             cv2.imwrite(os.path.join(color_shift_noise_dir, image), img)
 
+def make_smaller(class_num, doall=True):
+    color_nbg_dir = 'color_nbg'
+    color_shift_small_dir = 'color_small'
+    for image in os.listdir(color_nbg_dir):
+        if doall or str(class_num) + '_' in image:
+            img = cv2.imread(os.path.join(color_nbg_dir, image), cv2.IMREAD_UNCHANGED)
+            img = zoom_out(img)
+            #print img.shape
+            cv2.imwrite(os.path.join(color_shift_small_dir, image), img)
+
+
 def make_threads(function):
     threads = []
-    for i in range(0,7):
+    for i in range(1,7):
         t = Process(target=function, args=(i, False,))
         threads.append(t)
         t.start()
@@ -168,14 +198,17 @@ def make_images(i, image_count):
 
 
 if __name__ == "__main__":
-    operations = [make_grayscale,
-                  remove_background,
-                  make_shifted,
-                  make_nbg_grays,
-                  make_noisy,
-                  make_gray_noisy,
+    operations = [
                   #make_images,
-                  make_shift_noisy]
+                  #make_grayscale,
+                  #remove_background,
+                  make_smaller,
+                  make_shifted,
+                  #make_nbg_grays,
+                  #make_noisy,
+                  #make_gray_noisy,
+                  make_shift_noisy,
+                  ]
 
     image_count = 30
     if len(sys.argv) > 1:
@@ -183,8 +216,8 @@ if __name__ == "__main__":
 
     print "Making images..."
     if make_images in operations:
-    	for i in range(1, 7):
-    		make_images(i, image_count)
+        for i in range(1, 7):
+            make_images(i, image_count)
 
     print "Making grayscale..."
     if multi and make_grayscale in operations:
@@ -203,6 +236,12 @@ if __name__ == "__main__":
         make_threads(make_nbg_grays)
     elif make_nbg_grays in operations:
         make_nbg_grays(0)
+
+    print "Smalling shifted images..."
+    if multi and make_smaller in operations:
+        make_threads(make_smaller)
+    elif make_smaller in operations:
+        make_smaller(0)  
 
     print "Adding noise backgrounds..."
     if multi and make_noisy in operations:
@@ -227,5 +266,5 @@ if __name__ == "__main__":
         make_threads(make_shift_noisy)
     elif make_shift_noisy in operations:
         make_shift_noisy(0)
-        
+
 

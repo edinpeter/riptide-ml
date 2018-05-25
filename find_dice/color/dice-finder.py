@@ -118,17 +118,17 @@ def dice_subimages(cluster_lists, cluster_centers, image):
 
                 #tlp = (int(center[0] - dim), int(center[1] - dim))
                 #brp = (int(center[0] + dim), int(center[1] + dim))
-                tlp_x = int(center[0] - dim)
-                tlp_y = int(center[1] - dim)
-                brp_x = int(center[0] + dim)
-                brp_y = int(center[1] + dim)
+                tlp_x = int(center[0] - 1.5 * dim)
+                tlp_y = int(center[1] - 1.5 * dim)
+                brp_x = int(center[0] + 1.5 * dim)
+                brp_y = int(center[1] + 1.5 * dim)
 
                 tlp = (tlp_x, tlp_y)
                 brp = (brp_x, brp_y)
 
                 if area(tlp, brp) > 100:
                         factor = 1
-                        for i in range(-10, 40):
+                        for i in range(40):
                                 tlp_x -= factor
                                 tlp_y -= factor
                                 brp_x += factor
