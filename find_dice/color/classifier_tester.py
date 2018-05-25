@@ -40,6 +40,7 @@ for i in range(0, 500):
     samples = [r1, r2, r3, r4]
     #print r1, r2, r3, r4, len(testset) - 1
     t = torch.cat((testset[r1][0].unsqueeze(0), testset[r2][0].unsqueeze(0), testset[r3][0].unsqueeze(0), testset[r4][0].unsqueeze(0)), dim=0)
+    print t.shape
     soft = nn.Softmax(1)
     optim = Variable(t.cuda())
 

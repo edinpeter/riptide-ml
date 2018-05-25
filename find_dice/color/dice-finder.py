@@ -2,6 +2,8 @@ import cv2
 import sys
 import numpy as np
 import math
+import os
+from dice_tester import Candidate, Tester
 
 colors = [(0,0,255),
           (0,255,0),
@@ -63,8 +65,8 @@ def get_countours(image, black=40):
     im2, contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     reduced_contours = list()
     for cnt in contours:
-    	if area_check(cnt) and circumference_check(cnt):
-			reduced_contours.append(cnt)
+        if area_check(cnt) and circumference_check(cnt):
+            reduced_contours.append(cnt)
 
     return mask, image, reduced_contours
 
@@ -82,7 +84,7 @@ def get_cluster_lists(labels, centers, image=None):
             if label[0] not in lists:
                     lists[label[0]] = list()
             lists[label[0]].append(center)
-	
+    
     lists = clean_clusters(lists) if CLEAN_CLUSTERS else lists
     if image is not None:
             for label in lists.keys():
@@ -102,10 +104,17 @@ def largest_distance(list):
         return max_distance
 
 def dice_subimages(cluster_lists, cluster_centers, image):
+        max_x = image.shape[1]
+        max_y = image.shape[0]
+        candidates = list()
         for label in cluster_lists.keys():
+
                 dim = largest_distance(cluster_lists[label])
                 dim = 50 if dim == 0 else dim
                 center = new_cluster_center(cluster_lists[label])
+
+                c = Candidate(int(center[0]), int(center[1]), int(dim))
+
                 #tlp = (int(center[0] - dim), int(center[1] - dim))
                 #brp = (int(center[0] + dim), int(center[1] + dim))
                 tlp_x = int(center[0] - dim)
@@ -123,16 +132,31 @@ def dice_subimages(cluster_lists, cluster_centers, image):
                                 tlp_y -= factor
                                 brp_x += factor
                                 brp_y += factor
+
+                                tlp_x = min(max(tlp_x, 0), max_x)
+                                tlp_y = min(max(tlp_y, 0), max_y)
+                                brp_x = min(max(brp_x, 0), max_x)
+                                brp_y = min(max(brp_y, 0), max_y)
+
                                 tlp = (tlp_x, tlp_y)
                                 brp = (brp_x, brp_y)
-                                cv2.rectangle(image, tlp, brp, colors[label])
-        return image
+                                #cv2.rectangle(image, tlp, brp, colors[label])
+                                c_img = image[tlp[1] : brp[1], tlp[0] : brp[0]]
+                                #print tlp[1], brp[1], tlp[0], brp[0], image.shape, c_img.shape
+                                #cv2.imshow('c_img', c_img)
+                                #cv2.waitKey(0)
+                                c.add_image(c_img)
+                                #cv2.imshow('drawn', image)
+                                #cv2.waitKey(0)
+                candidates.append(c)
+
+        return candidates
 
 def new_cluster_center(points):
-	l = len(points)
-	x = sum(zip(*points)[0])
-	y = sum(zip(*points)[1])
-	return (x / float(l), y / float(l))
+    l = len(points)
+    x = sum(zip(*points)[0])
+    y = sum(zip(*points)[1])
+    return (x / float(l), y / float(l))
 
 def replace_labels(old, new, labels):
     for label in labels:
@@ -147,51 +171,66 @@ def merge_close_clusters(ccenters, labels):
     return labels
 
 def clean_clusters(cluster_lists):
-	for label in cluster_lists.keys():
-		cluster_dists = list()
-		for point1 in cluster_lists[label]:
-			point1_sum = 0
-			for point2 in cluster_lists[label]:
-				point1_sum += 1 if distance(point1, point2) > CLEAN_CLUSTERS_DISTANCE else 0
-			cluster_dists.append(point1_sum)
-		to_del = list()
-		for i in range(len(cluster_dists)):
-			if cluster_dists[i] > len(cluster_lists[label]) / 2:
-				to_del.append(cluster_lists[label][i])
-		for delete in to_del:
-			cluster_lists[label].remove(delete)
-	for label in cluster_lists.keys():
-		if len(cluster_lists[label]) == 0:
-			del cluster_lists[label]
+    for label in cluster_lists.keys():
+        cluster_dists = list()
+        for point1 in cluster_lists[label]:
+            point1_sum = 0
+            for point2 in cluster_lists[label]:
+                point1_sum += 1 if distance(point1, point2) > CLEAN_CLUSTERS_DISTANCE else 0
+            cluster_dists.append(point1_sum)
+            
+        to_del = list()
+        for i in range(len(cluster_dists)):
+            if cluster_dists[i] > len(cluster_lists[label]) / 2:
+                to_del.append(cluster_lists[label][i])
 
-	return cluster_lists              
+        for delete in to_del:
+            cluster_lists[label].remove(delete)
+    for label in cluster_lists.keys():
+        if len(cluster_lists[label]) == 0:
+            del cluster_lists[label]
+
+    return cluster_lists              
 
 if __name__ == "__main__":
-    image = cv2.imread('samples/85.png', cv2.IMREAD_UNCHANGED)
-    print image.shape
-    try:
-        image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
-    except:
-        pass
-    image = cv2.blur(image, (7, 7))
-    mask, image, contours = get_countours(image, black=100)
+    images = os.listdir('samples/')
+    for image_name in images:
+        if '.png' in image_name:
+            t = Tester()
+            #print image_name
+            image = cv2.imread(os.path.join('samples/', image_name), cv2.IMREAD_UNCHANGED)
+            try:
+                image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+            except:
+                pass
+            image = cv2.blur(image, (7, 7))
+            mask, image, contours = get_countours(image, black=100)
 
-    cv2.imshow('image,', image)
-    cv2.waitKey(0)
-    cv2.imshow('mask,', mask)
-    cv2.waitKey(0)
-
-    centers = get_centers(contours)
-    min_clusters, min_labels = get_clusters(centers)
-    if min_clusters is not None:
-            min_labels = merge_close_clusters(min_clusters, min_labels) if MERGE_CLOSE_CLUSTERS else min_labels
-
-            cluster_lists = get_cluster_lists(min_labels, centers, image)
-            #cluster_lists = clean_clusters(cluster_lists)
-
-            image = draw_clusters(image, min_labels, centers)
-            image = dice_subimages(cluster_lists, min_clusters, image)
-
-            cv2.imshow('clusters', image)
+            cv2.imshow('image,', image)
             cv2.waitKey(0)
+            #cv2.imshow('mask,', mask)
+            #cv2.waitKey(0)
+
+            centers = get_centers(contours)
+            min_clusters, min_labels = get_clusters(centers)
+
+            if min_clusters is not None and min_clusters.shape[1] == 2:
+                    min_labels = merge_close_clusters(min_clusters, min_labels) if MERGE_CLOSE_CLUSTERS else min_labels
+
+                    cluster_lists = get_cluster_lists(min_labels, centers)#, image)
+                    #cluster_lists = clean_clusters(cluster_lists)
+
+                    #image = draw_clusters(image, min_labels, centers)
+                    candidates = dice_subimages(cluster_lists, min_clusters, image)
+                    for cand in candidates:
+                        guess = t.test_candidate(cand)
+                        cand.classification = guess.data[0] + 1
+                    for cand in candidates:
+                    	cv2.putText(image, str(cand.classification), (cand.x - 30, cand.y - 30), 3, 1.2, (0,0,255))
+                        #cv2.rectangle(image, tlp, brp, colors[label])
+                    	cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,0,255))
+                    cv2.imshow('labeled', image)
+                    cv2.waitKey(0)
+
+
 
