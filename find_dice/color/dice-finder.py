@@ -18,6 +18,7 @@ CLEAN_CLUSTERS = True
 CLEAN_CLUSTERS_DISTANCE = 40
 MERGE_CLOSE_CLUSTERS = True
 MERGE_CLOSE_DISTANCE = 40
+CONFIDENCE_THRESHOLD = 9.5 / 15.0
 
 def distance(pt1, pt2):
         x = pt1[0] - pt2[0]
@@ -126,8 +127,8 @@ def dice_subimages(cluster_lists, cluster_centers, image):
                 brp = (brp_x, brp_y)
 
                 if area(tlp, brp) > 100:
-                        factor = 3
-                        for i in range(-5, 10):
+                        factor = 1
+                        for i in range(-10, 40):
                                 tlp_x -= factor
                                 tlp_y -= factor
                                 brp_x += factor
@@ -220,15 +221,22 @@ if __name__ == "__main__":
                     cluster_lists = get_cluster_lists(min_labels, centers)#, image)
                     #cluster_lists = clean_clusters(cluster_lists)
 
-                    #image = draw_clusters(image, min_labels, centers)
                     candidates = dice_subimages(cluster_lists, min_clusters, image)
                     for cand in candidates:
-                        guess = t.test_candidate(cand)
+                        confidence, guess = t.test_candidate(cand)
                         cand.classification = guess.data[0] + 1
+                        cand.confidence = confidence.data[0] / len(cand.images)
+                    
+                    image = draw_clusters(image, min_labels, centers)
                     for cand in candidates:
-                    	cv2.putText(image, str(cand.classification), (cand.x - 30, cand.y - 30), 3, 1.2, (0,0,255))
-                        #cv2.rectangle(image, tlp, brp, colors[label])
-                    	cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,0,255))
+                        if cand.classification > 0 and cand.confidence > CONFIDENCE_THRESHOLD:
+                            cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .7, (0,0,255))
+                            #cv2.rectangle(image, tlp, brp, colors[label])
+                            cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,0,255))
+                        else:
+                            cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .7, (0,255,0))
+                            cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,255,0))
+
                     cv2.imshow('labeled', image)
                     cv2.waitKey(0)
 

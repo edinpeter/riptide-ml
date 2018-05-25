@@ -11,6 +11,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from net_50 import Net as Net_50
 from net_100 import Net as Net_100
+from net_50_3_3_3 import Net as Net_333
 
 
 classes = ('1','2','3','4','5','6')
@@ -30,7 +31,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
 testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                          shuffle=True, num_workers=8)
 
-net = Net_50().cuda()
+net = Net_333().cuda()
 print net
 
 
@@ -40,7 +41,38 @@ criterion = nn.CrossEntropyLoss()
 optimizer = optim.ASGD(net.parameters(), lr=0.0011)
 #m = nn.LogSoftmax()
 
-for epoch in range(100):
+# Train on noisy, shifty data
+for epoch in range(80):
+    running_loss = 0.0
+    for i, data in enumerate(trainloader, 0):
+        inputs, labels, filenames = data
+        inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+        
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        running_loss += loss.data[0]
+        if i % 50 == 0:
+            print('[%d, %5d] loss: %.8f' %
+                  (epoch + 1, i + 1, running_loss / 2000))
+            running_loss = 0.0
+    if running_loss < 0.002:
+        optimizer = optim.ASGD(net.parameters(), lr=0.0001)
+    if running_loss < 0.0002:
+        optimizer = optim.ASGD(net.parameters(), lr=0.00001)
+
+# another 20 epochs on data with backgrounds
+trainset = DiceDataset("data/dice_snaps", train=True, classes=len(classes), class_max=300, train_percent=1, dims=dims)
+
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+                                          shuffle=True, num_workers=8)
+
+print "Loaded polishing data"
+
+for epoch in range(20):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels, filenames = data

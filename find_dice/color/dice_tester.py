@@ -11,6 +11,7 @@ class Candidate():
         self.images = list()
         self.classification = -1
         self.dim = dim
+        self.confidence = -1
     def add_image(self, image):
         image = cv2.resize(image, (50, 50))
         image = torch.from_numpy(image).float()
@@ -19,7 +20,7 @@ class Candidate():
 class Tester():
 
     def __init__(self):
-        self.model = torch.load('models/94_5000.pt').cuda()
+        self.model = torch.load('models/87_5000_300.pt').cuda()
         self.model.eval()
         self.soft = nn.Softmax(1)
 
@@ -34,6 +35,7 @@ class Tester():
             softed = self.soft(Variable(outputs.data))
             running_outputs = running_outputs + softed if running_outputs is not None else softed
             _, predicted = torch.max(softed.data, 1)
-        _, predicted = torch.max(running_outputs, 1)
+        confidence, predicted = torch.max(running_outputs, 1)
         print running_outputs
-        return predicted 
+        print len(candidate.images)
+        return confidence, predicted
