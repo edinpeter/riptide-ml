@@ -18,7 +18,7 @@ classes = ('1','2','3','4','5','6')
 
 dims = 50
 
-cuda = False
+cuda = True
 
 trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=1000, train_percent=0.6, dims=dims)
 

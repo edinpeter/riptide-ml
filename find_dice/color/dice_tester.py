@@ -4,7 +4,7 @@ from torch import nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import sys
-cuda = False
+cuda = True
 
 class Candidate():
     def __init__(self, x, y, dim):
