@@ -18,9 +18,11 @@ classes = ('1','2','3','4','5','6')
 
 dims = 50
 
-trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=3000, train_percent=0.4, dims=dims)
+cuda = False
 
-testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=3000, train_percent=0.4, dims=dims)
+trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=30, train_percent=0.4, dims=dims)
+
+testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=30, train_percent=0.4, dims=dims)
 
 print "Train set length: ", len(trainset)
 print "Test set length: ", len(testset)
@@ -31,7 +33,7 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
 testloader = torch.utils.data.DataLoader(testset, batch_size=4,
                                          shuffle=True, num_workers=8)
 
-net = Net_333().cuda()
+net = Net_333().cuda() if cuda else Net_333()
 print net
 
 
@@ -42,11 +44,14 @@ optimizer = optim.ASGD(net.parameters(), lr=0.0011)
 #m = nn.LogSoftmax()
 
 # Train on noisy, shifty data
-for epoch in range(80):
+for epoch in range(1):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels, filenames = data
-        inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+        if cuda:
+            inputs, labels = inputs.cuda(), labels.cuda()
+        
+        inputs, labels = Variable(inputs), Variable(labels)
         
         optimizer.zero_grad()
         outputs = net(inputs)
@@ -72,11 +77,14 @@ trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
 
 print "Loaded polishing data"
 
-for epoch in range(20):
+for epoch in range(5):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels, filenames = data
-        inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+        if cuda:
+            inputs, labels = Variable(inputs.cuda()), Variable(labels.cuda())
+        else:
+            Variable(inputs), Variable(labels)
         
         optimizer.zero_grad()
         outputs = net(inputs)
@@ -102,7 +110,9 @@ images, labels, filenames = dataiter.next()
 
 print('GroundTruth: ', ' '.join('%5s' % classes[labels[j]] for j in range(4)))
 
-outputs = net(Variable(images.cuda()))
+if cuda:
+    images = images.cuda()
+outputs = net(Variable(images))
 
 _, predicted = torch.max(outputs.data, 1)
 
@@ -114,10 +124,14 @@ total = 0
 
 for data in testloader:
     images, labels, filenames = data
-    outputs = net(Variable(images.cuda()))
+    if cuda:
+        images = images.cuda()
+        labels = labels.cuda()
+    outputs = net(Variable(images))
     _, predicted = torch.max(outputs.data, 1)
     total += labels.size(0)
-    correct += (predicted == labels.cuda()).sum()
+    correct += (predicted == labels).sum()
+
 
 print('Accuracy of the network on the %i test images: %d %%' %  (len(testset), (
     100 * correct / total)))
@@ -126,9 +140,12 @@ class_correct = list(0. for i in range(len(classes)))
 class_total = list(0. for i in range(len(classes)))
 for data in testloader:
     images, labels, filenames = data
-    outputs = net(Variable(images.cuda()))
+    if cuda:
+        images = images.cuda()
+        labels = labels.cuda()
+    outputs = net(Variable(images))
     _, predicted = torch.max(outputs.data, 1)
-    c = (predicted == labels.cuda()).squeeze()
+    c = (predicted == labels.squeeze())
 
     for i in range(len(labels)):
         label = labels[i]

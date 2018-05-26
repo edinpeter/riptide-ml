@@ -3,6 +3,8 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 import torch.nn.functional as F
+import sys
+cuda = False
 
 class Candidate():
     def __init__(self, x, y, dim):
@@ -18,9 +20,17 @@ class Candidate():
         self.images.append(image)
 
 class Tester():
+    model = None
 
     def __init__(self):
-        self.model = torch.load('models/85_3000_300.pt').cuda()
+        try:
+            self.model = torch.load('models/14_30_30_nc.pt')
+        except:
+            raise Exception("Cuda / non-cuda model specified on non-cuda / cuda device")
+            sys.exit(0)
+
+        if cuda:
+            self.model = self.model.cuda()
         self.model.eval()
         self.soft = nn.Softmax(1)
 
@@ -29,8 +39,9 @@ class Tester():
         for c_img in candidate.images:
             c_img = c_img.unsqueeze(0)
             c_img = c_img.transpose(1,3)
-
-            img = Variable(c_img.cuda())
+            if cuda:
+                c_img = c_img.cuda()
+            img = Variable(c_img)
             outputs = self.model(img)
             softed = self.soft(Variable(outputs.data))
             running_outputs = running_outputs + softed if running_outputs is not None else softed

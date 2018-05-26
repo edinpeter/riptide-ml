@@ -2,7 +2,6 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
-from skimage import io, transform, color
 import matplotlib.pyplot as plt
 import cv2
 
