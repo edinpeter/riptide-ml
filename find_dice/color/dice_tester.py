@@ -23,11 +23,11 @@ class Tester():
     model = None
 
     def __init__(self):
-        try:
-            self.model = torch.load('models/14_30_30_nc.pt')
-        except:
-            raise Exception("Cuda / non-cuda model specified on non-cuda / cuda device")
-            sys.exit(0)
+        #try:
+        self.model = torch.load('models/86_3000_300.pt', map_location={'cuda:0': 'cpu'})
+        #except:
+        #    raise Exception("Cuda / non-cuda model specified on non-cuda / cuda device")
+        #    sys.exit(0)
 
         if cuda:
             self.model = self.model.cuda()
