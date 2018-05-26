@@ -20,7 +20,7 @@ class Candidate():
 class Tester():
 
     def __init__(self):
-        self.model = torch.load('models/87_5000_300.pt').cuda()
+        self.model = torch.load('models/85_3000_300.pt').cuda()
         self.model.eval()
         self.soft = nn.Softmax(1)
 

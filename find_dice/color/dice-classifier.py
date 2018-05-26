@@ -18,9 +18,9 @@ classes = ('1','2','3','4','5','6')
 
 dims = 50
 
-trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=5000, train_percent=0.4, dims=dims)
+trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=3000, train_percent=0.4, dims=dims)
 
-testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=5000, train_percent=0.4, dims=dims)
+testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=3000, train_percent=0.4, dims=dims)
 
 print "Train set length: ", len(trainset)
 print "Test set length: ", len(testset)

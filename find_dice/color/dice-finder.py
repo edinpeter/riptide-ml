@@ -127,8 +127,8 @@ def dice_subimages(cluster_lists, cluster_centers, image):
                 brp = (brp_x, brp_y)
 
                 if area(tlp, brp) > 100:
-                        factor = 1
-                        for i in range(40):
+                        factor = 2
+                        for i in range(20):
                                 tlp_x -= factor
                                 tlp_y -= factor
                                 brp_x += factor
@@ -227,7 +227,7 @@ if __name__ == "__main__":
                         cand.classification = guess.data[0] + 1
                         cand.confidence = confidence.data[0] / len(cand.images)
                     
-                    image = draw_clusters(image, min_labels, centers)
+                    #image = draw_clusters(image, min_labels, centers)
                     for cand in candidates:
                         if cand.classification > 0 and cand.confidence > CONFIDENCE_THRESHOLD:
                             cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .7, (0,0,255))
