@@ -199,14 +199,14 @@ def make_images(i, image_count):
 
 if __name__ == "__main__":
     operations = [
-                  #make_images,
-                  #make_grayscale,
-                  #remove_background,
+                  make_images,
+                  make_grayscale,
+                  remove_background,
                   make_smaller,
                   make_shifted,
-                  #make_nbg_grays,
-                  #make_noisy,
-                  #make_gray_noisy,
+                  make_nbg_grays,
+                  make_noisy,
+                  make_gray_noisy,
                   make_shift_noisy,
                   ]
 
