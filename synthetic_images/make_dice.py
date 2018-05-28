@@ -182,6 +182,13 @@ def make_smaller(class_num, doall=True):
             #print img.shape
             cv2.imwrite(os.path.join(color_shift_small_dir, image), img)
 
+def make_gray_shift_noisy(class_num, doall=True):
+    gray_noise_dir = 'gray_shift_noise'
+    color_noise_dir = 'color_shift_noise'
+    for image in os.listdir(color_noise_dir):
+        if doall or str(class_num) + '_' in image:
+            img = cv2.imread(os.path.join(color_noise_dir, image), cv2.IMREAD_GRAYSCALE)
+            cv2.imwrite(os.path.join(gray_noise_dir, image), img)	
 
 def make_threads(function):
     threads = []
@@ -208,6 +215,7 @@ if __name__ == "__main__":
                   make_noisy,
                   make_gray_noisy,
                   make_shift_noisy,
+                  make_gray_shift_noisy
                   ]
 
     image_count = 30
@@ -267,4 +275,8 @@ if __name__ == "__main__":
     elif make_shift_noisy in operations:
         make_shift_noisy(0)
 
-
+    print "Graying shifted images..."
+    if multi and make_gray_shift_noisy in operations:
+        make_threads(make_gray_shift_noisy)
+    elif make_shift_noisy in operations:
+        make_gray_shift_noisy(0)

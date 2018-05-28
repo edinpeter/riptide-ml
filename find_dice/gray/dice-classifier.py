@@ -20,9 +20,9 @@ dims = 50
 
 cuda = True
 
-trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=1000, train_percent=0.6, dims=dims)
+trainset = DiceDataset("data/training_noise", train=True, classes=len(classes), class_max=5000, train_percent=0.6, dims=dims)
 
-testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=1000, train_percent=0.6, dims=dims)
+testset = DiceDataset("data/training_noise", train=False, classes=len(classes), class_max=5000, train_percent=0.6, dims=dims)
 
 print "Train set length: ", len(trainset)
 print "Test set length: ", len(testset)
@@ -70,14 +70,14 @@ for epoch in range(80):
         optimizer = optim.ASGD(net.parameters(), lr=0.00001)
 
 # another 20 epochs on data with backgrounds
-trainset = DiceDataset("data/dice_snaps", train=True, classes=len(classes), class_max=300, train_percent=1, dims=dims)
+trainset = DiceDataset("data/dice_snaps", train=True, classes=len(classes), class_max=3000, train_percent=1, dims=dims)
 
 trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
                                           shuffle=True, num_workers=8)
 
 print "Loaded polishing data"
 
-for epoch in range(20):
+for epoch in range(80):
     running_loss = 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels, filenames = data

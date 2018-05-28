@@ -10,6 +10,7 @@ mkdir samples
 mkdir dice_snaps
 mkdir color_shift_noise
 mkdir color_small
+mkdir gray_shift_noise
 
 python make_dice.py 1000
 python make_samples.py
