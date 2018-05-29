@@ -4,6 +4,7 @@ import numpy as np
 import math
 import os
 from dice_tester import Candidate, Tester
+import time
 
 colors = [(0,0,255),
           (0,255,0),
@@ -19,6 +20,7 @@ CLEAN_CLUSTERS_DISTANCE = 40
 MERGE_CLOSE_CLUSTERS = True
 MERGE_CLOSE_DISTANCE = 40
 CONFIDENCE_THRESHOLD = .9
+VISUAL = False
 
 def distance(pt1, pt2):
         x = pt1[0] - pt2[0]
@@ -196,9 +198,11 @@ def clean_clusters(cluster_lists):
 
 if __name__ == "__main__":
     images = os.listdir('samples/')
+    search_times = list()
+    cuda_times = list()
     for image_name in images:
         if '.png' in image_name:
-            t = Tester()
+            model_tester = Tester()
             #print image_name
             image = cv2.imread(os.path.join('samples/', image_name), cv2.IMREAD_UNCHANGED)
             try:
@@ -207,9 +211,9 @@ if __name__ == "__main__":
                 pass
             image = cv2.blur(image, (7, 7))
             mask, image, contours = get_countours(image, black=100)
-
-            cv2.imshow('image,', image)
-            cv2.waitKey(0)
+            if VISUAL:
+                cv2.imshow('image,', image)
+                cv2.waitKey(0)
             #cv2.imshow('mask,', mask)
             #cv2.waitKey(0)
 
@@ -221,13 +225,17 @@ if __name__ == "__main__":
 
                     cluster_lists = get_cluster_lists(min_labels, centers)#, image)
                     #cluster_lists = clean_clusters(cluster_lists)
-
+                    t = time.time()
                     candidates = dice_subimages(cluster_lists, min_clusters, image)
+                    search_time = time.time() - t
+                    print "Found subimages in %2.4f seconds" % (search_time)
+                    t = time.time()
                     for cand in candidates:
-                        confidence, guess = t.test_candidate(cand)
+                        confidence, guess = model_tester.test_candidate(cand)
                         cand.classification = guess.data[0] + 1
                         cand.confidence = confidence.data[0] / len(cand.images)
-                    
+                    cuda_time = time.time() - t
+                    print "Cuda operations finished in %2.4f seconds" % (cuda_time)
                     #image = draw_clusters(image, min_labels, centers)
                     for cand in candidates:
                         if cand.classification > 0 and cand.confidence > CONFIDENCE_THRESHOLD:
@@ -237,9 +245,17 @@ if __name__ == "__main__":
                         else:
                             cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .5, (0,255,0))
                             cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,255,0))
+                    if VISUAL:
+                        cv2.imshow('labeled', image)
+                        cv2.waitKey(0)
+                    search_times.append(search_time)
+                    cuda_times.append(cuda_time)
+    print "Summary:\n"
+    print "Avg. Search time: %1.4f" % (sum(search_times) / float(len(search_times)))
+    print "Avg. Cuda time: %1.4f" % (sum(cuda_times) / float(len(cuda_times)))
 
-                    cv2.imshow('labeled', image)
-                    cv2.waitKey(0)
+
+
 
 
 

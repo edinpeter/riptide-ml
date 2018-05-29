@@ -51,6 +51,6 @@ class Tester():
             running_outputs = running_outputs + softed if running_outputs is not None else softed
             _, predicted = torch.max(softed.data, 1)
         confidence, predicted = torch.max(running_outputs, 1)
-        print running_outputs
-        print len(candidate.images)
+        #print running_outputs
+        #print len(candidate.images)
         return confidence, predicted
