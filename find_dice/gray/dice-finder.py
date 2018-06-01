@@ -15,12 +15,17 @@ colors = [(0,0,255),
 
 area = lambda tlp, brp : ((brp[0] - tlp[0]) * (brp[1] - tlp[1]))
 
-CLEAN_CLUSTERS = True
+CLEAN_CLUSTERS = False
 CLEAN_CLUSTERS_DISTANCE = 40
 MERGE_CLOSE_CLUSTERS = True
 MERGE_CLOSE_DISTANCE = 40
 CONFIDENCE_THRESHOLD = .9
-VISUAL = False
+SHOW_IMAGES = False
+SAVE_IMAGES = True
+SHOW_BOXES = False
+DRAW_CONNECTIONS = True
+DRAW_CLUSTERS = True
+
 
 def distance(pt1, pt2):
         x = pt1[0] - pt2[0]
@@ -94,8 +99,7 @@ def get_cluster_lists(labels, centers, image=None):
                     for center in lists[label]:
                             for center2 in lists[label]:
                                     cv2.line(image, center, center2, colors[label])
-    
-    return lists
+    return lists, image
 
 
 def largest_distance(list):
@@ -143,15 +147,13 @@ def dice_subimages(cluster_lists, cluster_centers, image):
 
                                 tlp = (tlp_x, tlp_y)
                                 brp = (brp_x, brp_y)
-                                #cv2.rectangle(image, tlp, brp, colors[label])
                                 c_img = image[tlp[1] : brp[1], tlp[0] : brp[0]]
-                                #print tlp[1], brp[1], tlp[0], brp[0], image.shape, c_img.shape
-                                #cv2.imshow('c_img', c_img)
-                                #cv2.waitKey(0)
                                 c_img = cv2.cvtColor(c_img, cv2.COLOR_BGR2GRAY)
                                 c.add_image(c_img)
-                                #cv2.imshow('drawn', image)
-                                #cv2.waitKey(0)
+                                if SHOW_BOXES:
+                                    cv2.rectangle(image, tlp, brp, colors[label])
+                                    cv2.imshow('drawn', image)
+                                    cv2.waitKey(0)
                 candidates.append(c)
 
         return candidates
@@ -211,7 +213,7 @@ if __name__ == "__main__":
                 pass
             image = cv2.blur(image, (7, 7))
             mask, image, contours = get_countours(image, black=100)
-            if VISUAL:
+            if SHOW_IMAGES:
                 cv2.imshow('image,', image)
                 cv2.waitKey(0)
             #cv2.imshow('mask,', mask)
@@ -222,9 +224,12 @@ if __name__ == "__main__":
 
             if min_clusters is not None and min_clusters.shape[1] == 2:
                     min_labels = merge_close_clusters(min_clusters, min_labels) if MERGE_CLOSE_CLUSTERS else min_labels
-
-                    cluster_lists = get_cluster_lists(min_labels, centers)#, image)
-                    #cluster_lists = clean_clusters(cluster_lists)
+                    cluster_lists = None
+                    if DRAW_CONNECTIONS:
+                        cluster_lists, image = get_cluster_lists(min_labels, centers, image)
+                    else:
+                        cluster_lists, _ = get_cluster_lists(min_labels, centers)
+                    cluster_lists = clean_clusters(cluster_lists)
                     t = time.time()
                     candidates = dice_subimages(cluster_lists, min_clusters, image)
                     search_time = time.time() - t
@@ -236,7 +241,8 @@ if __name__ == "__main__":
                         cand.confidence = confidence.data[0] / len(cand.images)
                     cuda_time = time.time() - t
                     print "Cuda operations finished in %2.4f seconds" % (cuda_time)
-                    #image = draw_clusters(image, min_labels, centers)
+                    if DRAW_CLUSTERS:
+                        image = draw_clusters(image, min_labels, centers)
                     for cand in candidates:
                         if cand.classification > 0 and cand.confidence > CONFIDENCE_THRESHOLD:
                             cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .5, (0,0,255))
@@ -245,9 +251,11 @@ if __name__ == "__main__":
                         else:
                             cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .5, (0,255,0))
                             cv2.rectangle(image, (cand.x - cand.dim / 2, cand.y - cand.dim / 2), (cand.x + cand.dim / 2, cand.y + cand.dim / 2), (0,255,0))
-                    if VISUAL:
+                    if SHOW_IMAGES:
                         cv2.imshow('labeled', image)
                         cv2.waitKey(0)
+                    if SAVE_IMAGES:
+                        cv2.imwrite(os.path.join('results/' + image_name), image)
                     search_times.append(search_time)
                     cuda_times.append(cuda_time)
     print "Summary:\n"

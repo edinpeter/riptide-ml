@@ -1,5 +1,6 @@
 mkdir -p data/training_noise
 mkdir -p data/dice_snaps
+mkdir -p results
 
 cp ../../synthetic_images/color_shift_noise/[0-2]* data/training_noise
 cp ../../synthetic_images/color_shift_noise/[3-4]* data/training_noise
