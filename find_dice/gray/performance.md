@@ -1,10 +1,10 @@
 i7-6700k / GTX 1080:
-Avg. Search time: 0.0055
-Avg. Cuda time: 0.0690
+	Avg. Search time: 0.0055
+	Avg. Cuda time: 0.0690
 
 Macbook:
-Avg. Search time: 0.0109
-Avg. Cuda time: 0.3801 ( CPU )
+	Avg. Search time: 0.0109
+	Avg. Cuda time: 0.3801 ( CPU )
 
 Jetson:
 (HDMI in):
