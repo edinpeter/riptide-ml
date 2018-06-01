@@ -15,7 +15,7 @@ colors = [(0,0,255),
 
 area = lambda tlp, brp : ((brp[0] - tlp[0]) * (brp[1] - tlp[1]))
 
-CLEAN_CLUSTERS = False
+CLEAN_CLUSTERS = True
 CLEAN_CLUSTERS_DISTANCE = 40
 MERGE_CLOSE_CLUSTERS = True
 MERGE_CLOSE_DISTANCE = 40
@@ -86,7 +86,14 @@ def draw_clusters(image, labels, centers):
             pass
     return image
 
-def get_cluster_lists(labels, centers, image=None):
+def draw_connections(lists, image):
+    for label in lists.keys():
+        for center in lists[label]:
+                for center2 in lists[label]:
+                        cv2.line(image, center, center2, colors[label])
+    return image
+
+def get_cluster_lists(labels, centers):
     lists = dict()
     for label, center in zip(labels, centers):
             if label[0] not in lists:
@@ -94,12 +101,8 @@ def get_cluster_lists(labels, centers, image=None):
             lists[label[0]].append(center)
     
     lists = clean_clusters(lists) if CLEAN_CLUSTERS else lists
-    if image is not None:
-            for label in lists.keys():
-                    for center in lists[label]:
-                            for center2 in lists[label]:
-                                    cv2.line(image, center, center2, colors[label])
-    return lists, image
+
+    return lists
 
 
 def largest_distance(list):
@@ -133,8 +136,8 @@ def dice_subimages(cluster_lists, cluster_centers, image):
                 brp = (brp_x, brp_y)
 
                 if area(tlp, brp) > 100:
-                        factor = 1
-                        for i in range(30):
+                        factor = 2
+                        for i in range(20):
                                 tlp_x -= factor
                                 tlp_y -= factor
                                 brp_x += factor
@@ -224,11 +227,7 @@ if __name__ == "__main__":
 
             if min_clusters is not None and min_clusters.shape[1] == 2:
                     min_labels = merge_close_clusters(min_clusters, min_labels) if MERGE_CLOSE_CLUSTERS else min_labels
-                    cluster_lists = None
-                    if DRAW_CONNECTIONS:
-                        cluster_lists, image = get_cluster_lists(min_labels, centers, image)
-                    else:
-                        cluster_lists, _ = get_cluster_lists(min_labels, centers)
+                    cluster_lists = get_cluster_lists(min_labels, centers)
                     cluster_lists = clean_clusters(cluster_lists)
                     t = time.time()
                     candidates = dice_subimages(cluster_lists, min_clusters, image)
@@ -243,6 +242,8 @@ if __name__ == "__main__":
                     print "Cuda operations finished in %2.4f seconds" % (cuda_time)
                     if DRAW_CLUSTERS:
                         image = draw_clusters(image, min_labels, centers)
+                    if DRAW_CONNECTIONS:
+                        image = draw_connections(cluster_lists, image)
                     for cand in candidates:
                         if cand.classification > 0 and cand.confidence > CONFIDENCE_THRESHOLD:
                             cv2.putText(image, str(cand.classification) + '-' + str(cand.confidence), (cand.x - 30, cand.y + 30), 3, .5, (0,0,255))
