@@ -4,7 +4,8 @@ from torch import nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import sys
-cuda = True
+
+cuda = torch.cuda.is_available()
 
 class Candidate():
     def __init__(self, x, y, dim):
@@ -25,8 +26,10 @@ class Tester():
     def __init__(self):
         #try:
         if cuda:
+            print "Found CUDA, loading CUDA model..."
             self.model = torch.load(self.model_dir)
         else:
+            print "No CUDA found, loading CPU model..."
             self.model = torch.load(self.model_dir, map_location={'cuda:0': 'cpu'})
         #except:
         #    raise Exception("Cuda / non-cuda model specified on non-cuda / cuda device")
